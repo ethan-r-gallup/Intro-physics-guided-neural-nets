@@ -20,17 +20,23 @@ for skipsize in range(1, 100, 1):
 
 phy = np.array([])
 base = np.array([])
+hybrid = np.array([])
 for col, hcol in zip(baseline.columns, hlen):
-    p = pd.read_csv(f'performance data/hybrid_perf_{hcol}.csv')
+    p = pd.read_csv(f'performance data/phyloss_perf_{col}4.csv')
     print(p)
-    pme = np.mean(abs(p.pred - p.Cc)**2)
+    pme = np.mean(abs(p.Cc_pred - p.Cc)**2)
+    h = pd.read_csv(f'performance data/hybrid_perf_{col}2.csv')
+    print(h)
+    hme = np.mean((h.pred - h.Cc)**2)
     b = pd.read_csv(f'performance data/baseline_perf_{col}.csv')
     bme = np.mean(abs(b.Cc_pred - b.Cc)**2)
     phy = np.append(phy, pme)
     base = np.append(base, bme)
+    hybrid = np.append(hybrid, hme)
 
 plt.plot(base, label='base')
-plt.plot(phy, label='phy')
+plt.plot(phy, label='phy loss')
+plt.plot(hybrid, label='hybrid')
 plt.legend()
 plt.show()
 

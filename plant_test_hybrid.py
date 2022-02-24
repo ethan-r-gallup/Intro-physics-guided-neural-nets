@@ -11,12 +11,14 @@ import winsound
 
 torch.autograd.set_detect_anomaly(True)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print(f'device: {device}')
+
 
 hybrid_training = pd.DataFrame(index=np.arange(0, 500))
-
-pbar = tqdm(range(1, 100, 1), ncols=145)
-
-for skipsize in pbar:
+count = 0
+# pbar = tqdm(range(1, 100, 1), ncols=145)
+skipsize = 1
+while skipsize < 100:
     # hyper parameters
     num_terms = 3
     input_size = 100
@@ -136,11 +138,13 @@ for skipsize in pbar:
     # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=200, gamma=0.3)
     n_total_steps = len(train_loader)
 
-    # pbar = tqdm(range(num_epochs), ncols=140)
+    print(f'{skipsize}. dsize: {len(mask)}, b_size: {batch_size}')
+
+    pbar = tqdm(range(num_epochs), ncols=140)
 
     losses = pd.DataFrame(columns=[f'{len(mask)}'])
 
-    for epoch in range(num_epochs):
+    for epoch in pbar:
         for step, (batch_x, batch_y) in enumerate(train_loader): # for each training step
 
             b_x = Variable(batch_x, requires_grad=True)
@@ -153,6 +157,7 @@ for skipsize in pbar:
             optimizer.step()        # apply gradients
         scheduler.step()
         losses = losses.append({f'{skipsize}': loss.data.cpu().numpy()}, ignore_index=True)
+        pbar.set_postfix_str(f"loss: {loss.item():.6f}")
 
     hybrid_training = pd.concat([hybrid_training, losses], axis=1)
 
@@ -177,12 +182,13 @@ for skipsize in pbar:
     actual = dfy2.iloc[3100:-1, :].reset_index()
 
     hybrid_perf = pd.concat([pred, actual], axis=1)
+
+    skipsize += 1
     # print('perf')
     # print(hybrid_perf)
     # print(hybrid_training)
     hybrid_perf.to_csv(f'performance data/hybrid_perf_{skipsize}2.csv')
-    pbar.set_postfix_str(f"loss: {loss.item():.6f}, perf: {np.mean((hybrid_perf.pred-hybrid_perf.Cc)**2):.6f}, dsize: {len(mask)}, b_size: {batch_size}")
-
+    # pbar.set_postfix_str(f"loss: {loss.item():.6f}, perf: {np.mean((hybrid_perf.pred-hybrid_perf.Cc)**2):.6f}, dsize: {len(mask)}, b_size: {batch_size}")
 hybrid_training.to_csv('training data/hybrid_training2.csv')
 
 filename = 'tron.wav'
