@@ -18,15 +18,15 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 baseline_perf = pd.DataFrame(index=np.arange(0, 1000))
 baseline_training = pd.DataFrame(index=np.arange(0, 500))
 
-for skipsize in tqdm(range(1, 100, 1), ncols=100):
+for skipsize in range(1, 100, 1):
 
     # hyper parameters
     input_size = 12  # 28x28
     hidden_size = 20  # how many neurons per hidden layer
     num_out = 4  # digits 0-9
     num_epochs = 500
-    gamma = .98
-    learning_rate = 0.01
+    gamma = 0.99
+    learning_rate = 0.001
 
     mask = np.arange(100, 3100, skipsize)
     lm = len(mask)
@@ -79,6 +79,7 @@ for skipsize in tqdm(range(1, 100, 1), ncols=100):
 
     # model
     model = NeuralNet(input_size, hidden_size, num_out)
+    model.load_state_dict(torch.load('pretrained_model.pt'), strict=False)
 
     # set loss method
     criterion = torch.nn.MSELoss()  # applies MSE and computes loss
@@ -89,10 +90,10 @@ for skipsize in tqdm(range(1, 100, 1), ncols=100):
     # training loop
     n_total_steps = len(train_loader)
 
-    # pbar = tqdm(range(num_epochs), ncols=90)
+    pbar = tqdm(range(num_epochs), ncols=90)
 
     losses = pd.DataFrame(columns=[f'{skipsize}'])
-    for epoch in range(num_epochs):
+    for epoch in pbar:
         for step, (batch_x, batch_y) in enumerate(train_loader): # for each training step
 
             b_x = Variable(batch_x)
@@ -107,7 +108,7 @@ for skipsize in tqdm(range(1, 100, 1), ncols=100):
             optimizer.step()        # apply gradients
         scheduler.step()
         losses = losses.append({f'{skipsize}': loss.data.cpu().numpy()}, ignore_index=True)
-        # pbar.set_postfix_str(f"loss: {loss.item():.6f}, lr: {scheduler.get_last_lr()[-1]:.3f}")
+        pbar.set_postfix_str(f"loss: {loss.item():.6f}, lr: {scheduler.get_last_lr()[-1]:.8f}")
 
     baseline_training = pd.concat([baseline_training, losses], axis=1)
 
@@ -135,8 +136,8 @@ for skipsize in tqdm(range(1, 100, 1), ncols=100):
     # print('perf')
     # print(baseline_perf)
     # print(baseline_training)
-    baseline_perf.to_csv(f'performance data/baseline_perf_{skipsize}_2.csv')
-baseline_training.to_csv('training data/baseline_training_2.csv')
+    baseline_perf.to_csv(f'performance data/transfer_perf_{skipsize}.csv')
+baseline_training.to_csv('training data/transfer_training.csv')
 
 filename = 'tron.wav'
 # winsound.PlaySound(filename, winsound.SND_FILENAME)
