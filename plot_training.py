@@ -1,22 +1,34 @@
+
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+import seaborn as sns
+sns.set_theme()
+sns.set_style('whitegrid')
+mpl.rcParams['lines.markeredgecolor'] = 'w'
+mpl.rcParams['lines.markeredgewidth'] = .5
+# mpl.rcParams['font.family'] = 'fantasy'
 import numpy as np
 import pandas as pd
-from mpl_toolkits.mplot3d import axes3d
-import matplotlib.pyplot as plt
-from scipy.signal import savgol_filter
-import winsound
-
 
 baseline = pd.read_csv('training data/baseline_training.csv').drop(['Unnamed: 0'], axis=1)
-print(baseline.columns)
+# print(baseline.columns)
 
-phyloss = pd.read_csv('training data/hybrid_training.csv').drop(['Unnamed: 0'], axis=1)
-print(phyloss.columns)
+phyloss = pd.read_csv('training data/phyloss_training4.csv').drop(['Unnamed: 0'], axis=1)
+# print(phyloss.columns)
+phytransfer = pd.read_csv('training data/transfer_training_2.csv').drop(['Unnamed: 0'], axis=1)
+phyhybrid = pd.read_csv('training data/hybrid_training2.csv').drop(['Unnamed: 0'], axis=1)
 
 hlen = []
 for skipsize in range(1, 100, 1):
     mask = np.arange(100, 3100, skipsize)
     lm = len(mask)
     hlen.append(lm)
+
+xs = np.array([])
+for i in range(1, 100):
+    mask = np.arange(100, 3100, i)
+    xs = np.append(xs, len(mask))
+print(xs)
 
 phy = np.array([])
 base = np.array([])
@@ -47,40 +59,71 @@ for col, hcol in zip(baseline.columns, hlen):
     transfer = np.append(transfer, tme)
     transfer2 = np.append(transfer2, tme2)
 
-plt.plot(base, label='base')
-plt.plot(phy, label='phy loss')
-plt.plot(hybrid, label='hybrid')
-# plt.plot(transfer, label='transfer')
-plt.plot(transfer2, label='transfer2')
-
-# plt.plot(transfer, label='transfer')
+fig = plt.figure(figsize=(12, 6))
+ax = fig.add_subplot(111)
+ax.plot(base, linewidth=1.75, color='white')
+ax.plot(base, label='base', linewidth=1.5, color='tab:blue')
+ax.plot(phy, linewidth=1.75, color='white')
+ax.plot(phy, label='phy loss', linewidth=1.5, color='tab:orange')
+plt.xticks(np.arange(0, 101, 20), ('3000', '150', '75', '50', '38', '30'))
+plt.xlabel('Data points')
+plt.ylabel('Performance')
 plt.legend()
 plt.show()
 
-# for i in baseline.columns:
-#     plt.semilogy(baseline[[i]], label='base')
-#     plt.semilogy(phyloss[[i]], label='phyloss')
-#     plt.legend()
-#     plt.title(f'{i}')
-#     plt.ylim((0, 0.5))
-
-x = np.arange(1, 501, 1)
-print(phyloss.columns)
-y = np.array(phyloss.columns, dtype=float)
-print(y)
-X, Y = np.meshgrid(x, y)
-Z = np.array(phyloss.iloc[:, 0:100].T)
-Zhat = savgol_filter(Z, 51, 3, axis=0)
-Z2 = np.array(baseline.iloc[:, 0:100].T)
-Zhat2 = np.array(savgol_filter(Z, 51, 3, axis=0))
-print(Z.shape)
-print(X.shape, Y.shape, Z.shape, Zhat.shape)
-
-fig = plt.figure()
-ax = plt.axes(projection='3d')
-ax.plot_surface(X, Y, np.log10(Z))
-ax.plot_surface(X, Y, np.log10(Z2))
-ax.set_title('wireframe')
-ax.set_xlabel('x')
-ax.set_ylabel('y')
+fig = plt.figure(figsize=(12, 6))
+ax = fig.add_subplot(111)
+ax.plot(base, linewidth=1.75, color='white')
+ax.plot(base, label='base', linewidth=1.5, color='tab:blue')
+ax.plot(hybrid, linewidth=1.75, color='white')
+ax.plot(hybrid, label='hybrid', linewidth=1.5, color='tab:green')
+plt.xticks(np.arange(0, 101, 20), ('3000', '150', '75', '50', '38', '30'))
+plt.xlabel('Data points')
+plt.ylabel('Performance')
+plt.legend()
 plt.show()
+
+fig = plt.figure(figsize=(12, 6))
+ax = fig.add_subplot(111)
+ax.plot(base, linewidth=1.75, color='white')
+ax.plot(base, label='base', linewidth=1.5, color='tab:blue')
+ax.plot(transfer2, linewidth=1.75, color='white')
+ax.plot(transfer2, label='transfer2', linewidth=1.5, color='tab:purple')
+plt.xticks(np.arange(0, 101, 20), ('3000', '150', '75', '50', '38', '30'))
+plt.xlabel('Data points')
+plt.ylabel('Performance')
+plt.legend()
+plt.show()
+
+fig = plt.figure(figsize=(12, 6))
+ax = fig.add_subplot(111)
+ax.plot(base, linewidth=1.75, color='white')
+ax.plot(base, label='base', linewidth=1.5, color='tab:blue')
+ax.plot(phy, linewidth=1.75, color='white')
+ax.plot(phy, label='phy loss', linewidth=1.5, color='tab:orange')
+ax.plot(hybrid, linewidth=1.75, color='white')
+ax.plot(hybrid, label='hybrid', linewidth=1.5, color='tab:green')
+ax.plot(transfer2, linewidth=1.75, color='white')
+ax.plot(transfer2, label='transfer2', linewidth=1.5, color='tab:purple')
+plt.xticks(np.arange(0, 101, 20), ('3000', '150', '75', '50', '38', '30'))
+plt.xlabel('Data points')
+plt.ylabel('Performance')
+plt.legend()
+plt.show()
+
+
+for i in baseline.columns:
+    plt.semilogy(baseline[[i]], linewidth=1.75, color='white')
+    plt.semilogy(baseline[[i]], label='base', linewidth=1.5, color='tab:blue')
+    plt.semilogy(phyloss[[i]], linewidth=1.75, color='white')
+    plt.semilogy(phyloss[[i]], label='phyloss', linewidth=1.5, color='tab:orange')
+    plt.semilogy(phyhybrid[[i]], linewidth=1.75, color='white')
+    plt.semilogy(phyhybrid[[i]], label='hybrid', linewidth=1.5, color='tab:green')
+    plt.semilogy(phytransfer[[i]], linewidth=1.75, color='white')
+    plt.semilogy(phytransfer[[i]], label='transfer', linewidth=1.5, color='tab:purple')
+    plt.legend()
+    plt.ylabel('MSE loss')
+    plt.xlabel('epochs')
+    plt.title(f'Training loss with {xs[int(i)-1]:.0f} data points')
+    plt.show()
+
