@@ -22,16 +22,19 @@ gamma = .99
 span = 2
 center = 1
 
-batch_size = 100
+mask = np.arange(100, 3100, 100)
+batch_size = 9
 
 dfx = pd.read_csv('Data/Xtrain_10000.csv')
+dfx[['Qout2']] = pd.DataFrame(np.sqrt(dfx.iloc[:, 10]/(np.pi*4)))
+print(dfx)
 for column in dfx.columns:
     dfx[column] = (dfx[column] - dfx[column].min()) / (dfx[column].max() - dfx[column].min())
-X = torch.tensor(dfx.iloc[0:3000, :].values, dtype=torch.float32)
+X = torch.tensor(dfx.iloc[mask, :].values, dtype=torch.float32)
 dfy = pd.read_csv('Data/Ytrain_10000.csv')[['Cc']]
 for column in dfy.columns:
     dfy[column] = (dfy[column] - dfy[column].min()) / (dfy[column].max() - dfy[column].min())
-Y = torch.tensor(dfy.iloc[0:3000, :].values, dtype=torch.float32)
+Y = torch.tensor(dfy.iloc[mask, :].values, dtype=torch.float32)
 
 X, Y = Variable(X).to(device), Variable(Y).to(device)
 
@@ -49,10 +52,10 @@ class CModel(nn.Module):
         self.W = nn.Parameter(W)
 
     def forward(self, rrxn, v2, v1, cc, qout):
-        qc = qout*cc.unsqueeze(1)
+        qc = qout.unsqueeze(1)*cc.unsqueeze(1)
         vc = (v2-v1.unsqueeze(1))*cc.unsqueeze(1)
         Cc = torch.cat((rrxn, qc, vc), 1)
-        Cc = torch.einsum('i,bi->b', self.W, Cc)
+        Cc = torch.einsum('i,bi->b', self.W, Cc)  # b linear combinations of the i
         return Cc/v2.squeeze()
 
 
@@ -103,13 +106,13 @@ class NeuralNet(nn.Module):
         self.lin.cuda()
 
     def forward(self, x):
-        qout = torch.sqrt(x[:, 10]/(np.pi*4)).unsqueeze(1)
-        x = torch.cat((x, qout), 1)
+        # qout = torch.sqrt(x[:, 10]/(np.pi*4)).unsqueeze(1)
+        # x = torch.cat((x, qout), 1)
         coef = torch.unsqueeze((x[:, 6]*x[:, 7]*x[:, 10]), 1)
         x = torch.cat((x, coef), 1)
         v = self.Vlin(x[:, [0, 1, 10, 11]])
-        rrxn = self.mac(x[:, [9, 12]])
-        out = self.Conc(rrxn, v, x[:, 10], x[:, 8], qout)
+        rrxn = self.mac(x[:, [9, 13]])
+        out = self.Conc(rrxn, v, x[:, 10], x[:, 8], x[:, 12])
         out = self.l1(out.unsqueeze(1))  # combination from inputs to hidden
         # out = self.relu1(out)  # call the hidden layers activation function
         out = self.lin(out)  # call the hidden layers activation function
@@ -151,7 +154,7 @@ for epoch in pbar:
 # plt.show()
 
 dfx2 = pd.read_csv('Data/Xtrain_10000.csv')
-# print(dfx2.columns)
+dfx2[['Qout2']] = pd.DataFrame(np.sqrt(dfx.iloc[:, 10]/(np.pi*4)))
 for column in dfx2.columns:
     dfx2[column] = (dfx2[column] - dfx2[column].min()) / (dfx2[column].max() - dfx2[column].min())
 X2 = torch.tensor(dfx2.iloc[3100:-1, :].values, dtype=torch.float32)
@@ -165,4 +168,4 @@ X2, Y2 = Variable(X2).to(device), Variable(Y2).to(device)
 pred = pd.DataFrame(model(X2).data.cpu().numpy(), columns=['pred'])
 
 actual = dfy2.iloc[3100:-1, :].reset_index()
-hybrid_perf = pd.concat([pred, actual], axis=1)
+print(np.mean((pred.pred - actual.Cc)**2))
