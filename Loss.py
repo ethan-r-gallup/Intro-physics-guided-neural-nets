@@ -14,9 +14,8 @@ import winsound
 # device configuration
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-phyloss_training = pd.DataFrame(index=np.arange(0, 500))
 
-for skipsize in tqdm(range(1, 100, 1), ncols=100):
+def run_loss(batch_size, skipsize):
     # hyper parameters
     input_size = 12  # 28x28
     hidden_size = 20  # how many neurons per hidden layer
@@ -26,9 +25,6 @@ for skipsize in tqdm(range(1, 100, 1), ncols=100):
     learning_rate = .01
 
     mask = np.arange(100, 3100, skipsize)
-    lm = len(mask)
-
-    batch_size = int(8.87509976e-9*lm**3 + 2.74530619e-06*lm**2 + 1.39164881e-02*lm + 9.58001062)
 
     dfx = pd.read_csv('Data/Xtrain_10000.csv')
     for column in dfx.columns:
@@ -44,7 +40,6 @@ for skipsize in tqdm(range(1, 100, 1), ncols=100):
     train_dataset = Data.TensorDataset(X, Y)
 
     train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
-
 
     class NeuralNet(nn.Module):
         def __init__(self, input_size, hidden_size, num_out):
@@ -86,10 +81,6 @@ for skipsize in tqdm(range(1, 100, 1), ncols=100):
     # training loop
     n_total_steps = len(train_loader)
 
-    # pbar = tqdm(range(num_epochs), ncols=90)
-
-    losses = pd.DataFrame(columns=[f'{skipsize}'])
-
     for epoch in range(num_epochs):
         for step, (batch_x, batch_y) in enumerate(train_loader): # for each training step
 
@@ -122,13 +113,6 @@ for skipsize in tqdm(range(1, 100, 1), ncols=100):
             loss.backward()         # backpropagation, compute gradients
             optimizer.step()        # apply gradients
         scheduler.step()
-        losses = losses.append({f'{skipsize}': l.data.cpu().numpy()}, ignore_index=True)
-        # pbar.set_postfix_str(f"loss: {l.item():.6f}, lr: {scheduler.get_last_lr()[-1]:.3f}, phy: {zero_.item():.6f}")
-    phyloss_training = pd.concat([phyloss_training, losses], axis=1)
-
-    # baseline_training.join(losses)
-    # plt.plot(losses)
-    # plt.show()
 
     dfx2 = pd.read_csv('Data/Xtrain_10000.csv')
     for column in dfx2.columns:
@@ -144,13 +128,5 @@ for skipsize in tqdm(range(1, 100, 1), ncols=100):
     pred = pd.DataFrame(model(X2).data.cpu().numpy(), columns=['Ca_pred', 'Cb_pred', 'Cc_pred', 'Qout_pred'])
 
     actual = dfy2.iloc[3100:-1, :].reset_index()
+    return np.mean((pred.Cc_pred - actual.Cc)**2)
 
-    phyloss_perf = pd.concat([pred, actual], axis=1)
-
-    phyloss_perf.to_csv(f'performance data/phyloss_perf_{skipsize}4.csv')
-    # print(skipsize, np.mean((phyloss_perf.pred - phyloss_perf.Cc)**2))
-phyloss_training.to_csv('training data/phyloss_training4.csv')
-
-# filename = 'tron.wav'
-# winsound.PlaySound(filename, winsound.SND_FILENAME)
-winsound.PlaySound('*', winsound.SND_ALIAS)
