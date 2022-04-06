@@ -7,6 +7,19 @@ sns.set_style('whitegrid')
 from scipy import interpolate
 from scipy import stats
 
+
+def patch_violinplot(palette, alpha, n):
+    from matplotlib.collections import PolyCollection
+    ax = plt.gca()
+    violins = [art for art in ax.get_children() if isinstance(art, PolyCollection)]
+    colors = sns.color_palette(palette, n_colors=n) * (len(violins)//n)
+    for i in range(len(violins)):
+        violins[i].set_edgecolor(colors[i])
+        violins[i].set_alpha(alpha)
+
+
+
+
 skips = np.array([1, 3, 6, 30, 60, 120])
 skips = np.array([120, 60, 30, 6, 3, 1])
 
@@ -97,83 +110,61 @@ for skip in skips:
 # plt.show()
 
 df = pd.melt(df)
+print(df)
+for i in szz:
+    dd = df[df['variable_0'].isin([i])]
+    pal = sns.color_palette('tab10')
+
+    alpha = 0.7
+    b = sns.boxplot(x='variable_1', y='value', data=dd, linewidth=.65, showfliers=False, palette=pal, width=0.3)
+    # p1 = sns.stripplot(x='variable_1', y='value', data=dd, dodge=True, jitter=False, linewidth=.5, size=3, palette=pal, ec="black", alpha=alpha)
+    # p2 = sns.violinplot(x='variable_1', y='value', data=dd, linewidth=.5, scale='width', bw=.75, cut=0, inner='box', palette=pal)
+    # for p, box in enumerate(b.artists):
+    #     r_, g_, b_, a_ = box.get_facecolor()
+    #     # box.set_edgecolor((r_, g_, b_, .75))
+    #     box.set_facecolor((r_, g_, b_, .75))
+    #     box.set_edgecolor((0, 0, 0, .75))
+    #     # box.set_facecolor((0, 0, 0, 0))
+    #     print(p)
+    #     for q in range(5*p, 5*(p+1)):
+    #         b.lines[q].set_color('black')
+    #         print('   ', q)
+    #     # for q in range(20, 28):
+    #     #     b.lines[q].set_alpha(0)
+
+    # patch_violinplot(['black', 'black', 'black', 'black', 'black'], alpha, 4)
+
+
+    plt.ylabel('Error')
+    plt.title(f'Performance when trained on {i} datapoints')
+
+    plt.savefig(f'plots/{i}plot.png')
+    plt.show()
+
+
+
+
 hy = df[df['variable_1'].isin(['baseline', 'hybrid'])]
 loss = df[df['variable_1'].isin(['baseline', 'loss'])]
 trans = df[df['variable_1'].isin(['baseline', 'transfer'])]
 
 mypal = sns.color_palette()
-p1 = sns.stripplot(x='variable_0', y='value', hue='variable_1', data=df, dodge=True, jitter=False, linewidth=.75, size=1.75)
-p2 = sns.violinplot(x='variable_0', y='value', hue='variable_1', data=df, linewidth=1, scale='width', bw=.75, cut=0, inner='stick', alpha=.5)
-h, l = p2.get_legend_handles_labels()
-plt.legend(h[0:4], l[0:4])
-plt.savefig('plots/df_violin_stick.png')
-plt.show()
 
-p1 = sns.stripplot(x='variable_0', y='value', hue='variable_1', data=hy, dodge=True, jitter=False, linewidth=.75, size=1.75)
-p2 = sns.violinplot(x='variable_0', y='value', hue='variable_1', data=hy, linewidth=1, scale='width', bw=.5, cut=0, inner='stick', alpha=.5)
-h, l = p2.get_legend_handles_labels()
-plt.legend(h[0:2], l[0:2])
-plt.savefig('plots/hy_violin_stick.png')
-plt.show()
-
-p1 = sns.stripplot(x='variable_0', y='value', hue='variable_1', data=loss, dodge=True, jitter=False, linewidth=.75, size=1.75, palette=[mypal[0], mypal[2]])
-p2 = sns.violinplot(x='variable_0', y='value', hue='variable_1', data=loss, linewidth=1, scale='width', bw=.5, cut=0, inner='stick', alpha=.5, palette=[mypal[0], mypal[2]])
-h, l = p2.get_legend_handles_labels()
-plt.legend(h[0:2], l[0:2])
-plt.savefig('plots/loss_violin_stick.png')
-plt.show()
-
-
-p1 = sns.stripplot(x='variable_0', y='value', hue='variable_1', data=trans, dodge=True, jitter=False, linewidth=.75, size=1.75, palette=[mypal[0], mypal[3]])
-p2 = sns.violinplot(x='variable_0', y='value', hue='variable_1', data=trans, linewidth=1, scale='width', bw=.75, cut=0, inner='stick', alpha=.5, palette=[mypal[0], mypal[3]])
-h, l = p2.get_legend_handles_labels()
-plt.legend(h[0:2], l[0:2])
-plt.savefig('plots/trans_violin_stick.png')
-plt.show()
-
-
-# INNER=BOX
-# p1 = sns.stripplot(x='variable_0', y='value', hue='variable_1', data=df, dodge=True, jitter=False, linewidth=.75, size=1.75)
-p2 = sns.violinplot(x='variable_0', y='value', hue='variable_1', data=df, linewidth=1, scale='width', bw=.75, cut=0, inner='box', alpha=.5)
-h, l = p2.get_legend_handles_labels()
-plt.legend(h[0:4], l[0:4])
-plt.savefig('plots/df_violin_box.png')
-plt.show()
-
-# p1 = sns.stripplot(x='variable_0', y='value', hue='variable_1', data=hy, dodge=True, jitter=False, linewidth=.75, size=1.75)
-p2 = sns.violinplot(x='variable_0', y='value', hue='variable_1', data=hy, linewidth=1, scale='width', bw=.5, cut=0, inner='box', alpha=.5)
-h, l = p2.get_legend_handles_labels()
-plt.legend(h[0:2], l[0:2])
-plt.savefig('plots/hy_violin_box.png')
-plt.show()
-
-# p1 = sns.stripplot(x='variable_0', y='value', hue='variable_1', data=loss, dodge=True, jitter=False, linewidth=.75, size=1.75, palette=[mypal[0], mypal[2]])
-p2 = sns.violinplot(x='variable_0', y='value', hue='variable_1', data=loss, linewidth=1, scale='width', bw=.5, cut=0, inner='box', alpha=.5, palette=[mypal[0], mypal[2]])
-h, l = p2.get_legend_handles_labels()
-plt.legend(h[0:2], l[0:2])
-plt.savefig('plots/loss_violin_box.png')
-plt.show()
-
-
-# p1 = sns.stripplot(x='variable_0', y='value', hue='variable_1', data=trans, dodge=True, jitter=False, linewidth=.75, size=1.75, palette=[mypal[0], mypal[3]])
-p2 = sns.violinplot(x='variable_0', y='value', hue='variable_1', data=trans, linewidth=1, scale='width', bw=.75, cut=0, inner='box', alpha=.5, palette=[mypal[0], mypal[3]])
-h, l = p2.get_legend_handles_labels()
-plt.legend(h[0:2], l[0:2])
-plt.savefig('plots/trans_violin_box.png')
-plt.show()
-
-
-
-sns.boxplot(x='variable_0', y='value', hue='variable_1', data=df, linewidth=1)
-plt.savefig('plots/df_box.png')
-plt.show()
-
-sns.boxplot(x='variable_0', y='value', hue='variable_1', data=hy, linewidth=1)
+sns.boxplot(x='variable_0', y='value', hue='variable_1', data=hy, linewidth=.65, showfliers=False, palette=pal, width=0.5)
+# plt.ylim(-.00025, .002)
+plt.ylabel('Error')
+plt.xlabel('Training Data Points')
 plt.savefig('plots/hy_box.png')
 plt.show()
-sns.boxplot(x='variable_0', y='value', hue='variable_1', data=loss, linewidth=1, palette=[mypal[0], mypal[2]])
+sns.boxplot(x='variable_0', y='value', hue='variable_1', data=loss, linewidth=.65, showfliers=False, palette=[pal[0], pal[2]], width=0.5)
+# plt.ylim(-.00025, .002)
+plt.ylabel('Error')
+plt.xlabel('Training Data Points')
 plt.savefig('plots/loss_box.png')
 plt.show()
-sns.boxplot(x='variable_0', y='value', hue='variable_1', data=trans, linewidth=1, palette=[mypal[0], mypal[3]])
+sns.boxplot(x='variable_0', y='value', hue='variable_1', data=trans, linewidth=.65, showfliers=False, palette=[pal[0], pal[3]], width=0.75)
+# plt.ylim(-.00025, .002)
+plt.ylabel('Error')
+plt.xlabel('Training Data Points')
 plt.savefig('plots/trans_box.png')
 plt.show()

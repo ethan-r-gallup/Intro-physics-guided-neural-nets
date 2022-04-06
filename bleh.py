@@ -1,23 +1,59 @@
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
+sns.set()
+sns.set_style('whitegrid')
+from scipy import interpolate
+from scipy import stats
 
-b = np.array([])
-batches = np.array([])
+skips = np.array([1, 3, 6, 30, 60, 120])
+skips = np.array([120, 60, 30, 6, 3, 1])
 
-for skipsize in range(1, 100, 2):
-    # hyper parameters
-    input_size = 12  # 28x28
-    hidden_size = 20  # how many neurons per hidden layer
-    num_out = 4  # digits 0-9
-    num_epochs = 500
-    gamma = .999
-    learning_rate = .1
+sz = np.array(3000/skips, dtype=int)
+szz = np.array(sz, dtype=str)
 
-    mask = np.arange(100, 3100, skipsize)
-    x = len(mask)
-    b = np.append(b, x)
-    print(len(mask))
-    batches = np.append(batches, int(8.87509976e-10*x**3 + 2.74530619e-06*x**2 + 1.39164881e-03*x + 9.58001062))
-    print(len(b), len(batches))
-plt.plot(b, batches, 'bo')
+d = {}
+for skip in skips:
+    base = pd.read_csv(f'perf_data2.base_{skip}.csv').iloc[:, 1]
+
+    hy = pd.read_csv(f'perf_data2.hybrid_{skip}.csv').iloc[:, 1]
+
+    loss = pd.read_csv(f'perf_data2.loss_{skip}.csv').iloc[:, 1]
+
+    trans = pd.read_csv(f'perf_data2.transfer_{skip}.csv').iloc[:, 1]
+
+    d[(f'l{int(3000 / skip)}', 'baseline')] = base.values
+    d[(f'l{int(3000 / skip)}', 'hybrid')] = hy.values
+    d[(f'l{int(3000 / skip)}', 'loss')] = loss.values
+    d[(f'l{int(3000 / skip)}', 'transfer')] = trans.values
+    # d2[(f'{int(3000 / skip)}', 'baseline')] = d1
+df = pd.DataFrame(d)
+
+
+plt.violinplot(df.l25)
+plt.title('25 datapoints')
+plt.ylabel('MAE')
 plt.show()
+plt.violinplot(df.l50)
+plt.title('50 datapoints')
+plt.ylabel('MAE')
+plt.show()
+plt.violinplot(df.l100)
+plt.title('100 datapoints')
+plt.ylabel('MAE')
+plt.show()
+plt.violinplot(df.l500)
+plt.title('500 datapoints')
+plt.ylabel('MAE')
+plt.show()
+plt.violinplot(df.l1000)
+plt.title('1000 datapoints')
+plt.ylabel('MAE')
+plt.show()
+plt.violinplot(df.l3000)
+plt.title('3000 datapoints')
+plt.ylabel('MAE')
+plt.show()
+
+
